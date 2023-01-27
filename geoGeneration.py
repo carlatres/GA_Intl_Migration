@@ -20,8 +20,8 @@ def generate_latlon(df):
             latitude.append(np.nan)
             longitude.append(np.nan)
 
-    df["longitude"] = longitude
-    df["latitude"] = latitude
+    df["lng"] = longitude
+    df["lat"] = latitude
 
     # df_na = df[df['capital'] == 'NA']
 
