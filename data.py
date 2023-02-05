@@ -6,6 +6,25 @@ from countryinfo import CountryInfo
 import utilities as utils
 
 
+# Read Datasets
+def read_abel_s1():
+    df = pd.read_excel("./data/abel-database-s1.xlsx", sheet_name='look up')
+    return df
+
+
+def read_abel_s2():
+    df = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2005-10', index_col=0)
+    return df
+
+
+def read_flow_allyears():
+    df_1 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='1990-95')
+    df_2 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='1995-00', index_col=0)
+    df_3 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2000-05', index_col=0)
+    df_4 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2005-10', index_col=0)
+    return df_1, df_2, df_3, df_4
+
+
 # DataFrame generation for countries and world regions
 def generate_df(df):
     # stack the prescribed level from columns to index
@@ -24,6 +43,7 @@ def generate_df(df):
     todict = {'origin': list_origin, 'destination': list_destination, 'flow': df.values.tolist()}
 
     # change dictionary to a dataframe
+
     new_df = pd.DataFrame(todict)
 
     return new_df
