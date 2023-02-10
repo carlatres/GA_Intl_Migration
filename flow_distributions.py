@@ -21,44 +21,41 @@ def read_all_years_flows():
     df_1 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='1990-95', index_col=0)
     df_1.reset_index(inplace=True)
     df_1.rename(columns={'index': 'iso 3 code'}, inplace=True)
-    df_2 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='1995-2000')
+    df_2 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='1995-2000', index_col=0)
     df_2.reset_index(inplace=True)
     df_2.rename(columns={'index': 'iso 3 code'}, inplace=True)
-    df_3 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2000-05')
+    df_3 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2000-05', index_col=0)
     df_3.reset_index(inplace=True)
     df_3.rename(columns={'index': 'iso 3 code'}, inplace=True)
-    df_4 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2005-10')
+    df_4 = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2005-10', index_col=0)
     df_4.reset_index(inplace=True)
     df_4.rename(columns={'index': 'iso 3 code'}, inplace=True)
     return df_1, df_2, df_3, df_4
 
 
-def extract_italy(df_1, df_2, df_3, df_4):
-    list_1 = df_1.loc[df_1['iso 3 code'] == 'ITA'].values.tolist()
-    list_2 = df_2.loc[df_2['iso 3 code'] == 'ITA'].values.tolist()
-    list_3 = df_3.loc[df_3['iso 3 code'] == 'ITA'].values.tolist()
-    list_4 = df_4.loc[df_4['iso 3 code'] == 'ITA'].values.tolist()
+def extract_by_label(df_1, df_2, df_3, df_4, label):
+    list_1 = df_1.loc[df_1['iso 3 code'] == label]
+    list_2 = df_2.loc[df_2['iso 3 code'] == label]
+    list_3 = df_3.loc[df_3['iso 3 code'] == label]
+    list_4 = df_4.loc[df_4['iso 3 code'] == label]
 
-    df_ita = pd.DataFrame()
-    df_ita['90-95'] = list_1
-    df_ita['95-00'] = list_2
-    df_ita['00-05'] = list_3
-    df_ita['05-10'] = list_4
-    return df_ita
+    df = pd.concat([list_1, list_2, list_3, list_4])
+    df.reset_index(inplace=True, drop=True)
+
+    range_years = ['90-95', '95-00', '00-05', '05-10']
+    df['range'] = range_years
+
+    df.drop(['iso 3 code'], axis=1, inplace=True)
+
+    return df
 
 
-def extract_total(df_1, df_2, df_3, df_4):
-    list_1 = df_1.loc[df_1['iso 3 code'] == 'TOTAL']
-    list_2 = df_2.loc[df_2['iso 3 code'] == 'TOTAL']
-    list_3 = df_3.loc[df_3['iso 3 code'] == 'TOTAL']
-    list_4 = df_4.loc[df_4['iso 3 code'] == 'TOTAL']
+def top_emigration_countries(df):
+    df = df.transpose()
+    df.sort_values([0], ascending=False, axis=0, inplace=True)
 
-    df_tot = pd.DataFrame()
-    df_tot['90-95'] = df_ita1
-    df_tot['95-00'] = df_ita2
-    df_tot['00-05'] = df_ita3
-    df_tot['05-10'] = df_ita4
-    return df_tot
+    return df
+
 
 
 def graph_top5(df):
@@ -83,11 +80,11 @@ def graph_top5(df):
 
 
 df_90, df_95, df_00, df_05 = read_all_years_flows()
-# df_italy = extract_italy(df_90, df_95, df_00, df_05)
-df_total = extract_total(df_90, df_95, df_00, df_05)
+df_italy = extract_by_label(df_90, df_95, df_00, df_05, 'ITA')
+df_total = extract_by_label(df_90, df_95, df_00, df_05, 'TOTAL')
 # graph_top5(df_total)
 
-df_total_2 = df_total.transpose()
+df_total_2 = top_emigration_countries(df_total)
 
 print(df_05.head())
 

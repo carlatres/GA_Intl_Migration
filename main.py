@@ -25,6 +25,7 @@ countries_df = generate_df(c_df)
 
 # remove countries out of the map declared by the geopandas low res countries dataset
 countries_df = utils.remove_orig_dest_countries(countries_df)
+countries_df = utils.remove_orig_dest_countries_tess(countries_df)
 # as we are generating the FlowDataFrame from a file, save our information to a CSV file
 #   to retrieve it in the FlowDataFrame generation
 countries_df.to_csv('./data/countries_flows.csv', index=False)
@@ -49,5 +50,5 @@ capital_df.rename(columns={'iso 3 code': 'tile_ID'}, inplace=True)
 
 print(capital_df.head())
 
-""" This is plot distribution for flow and flow-distance """
+# capital_df.to_csv('./data/countries.csv', index=False)
 
