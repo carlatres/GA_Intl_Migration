@@ -32,10 +32,14 @@ tessellation.head(3)
 tessellation = utils.remove_countries(tessellation, 'tile_ID')
 
 w_tess = tessellation.merge(capital_df.drop_duplicates(), on=['tile_ID'], how='left', indicator=True)
+tessellation.rename(columns={'pop_est': 'population'}, inplace=True)
 
 # redo FlowDataDrame after changes in tessellation
 fdf = skmob.FlowDataFrame.from_file('./data/countries_flows.csv', origin='origin',
                                     destination='destination', tessellation=tessellation, tile_id='tile_ID')
+
+# arr_flow = (fdf["flow"]-fdf["flow"].mean())/fdf["flow"].std()
+x=0
 
 # split dataset into training and testing
 fdf_train, fdf_test = train_test_split(fdf, test_size=0.3, random_state=25)
@@ -53,10 +57,10 @@ tessellation.head()
 # fit the gravity's model parameters
 fdf_train.head()
 
-gravity_singly_fitted = Gravity(gravity_type='singly constrained', name='model G1')
+gravity_singly_fitted = Gravity(gravity_type='exponential', name='model G1')
 print(gravity_singly_fitted)
 
-gravity_singly_fitted.fit(fdf_train, relevance_column='relevance')
+gravity_singly_fitted.fit(fdf_train, relevance_column='population')
 print(gravity_singly_fitted)
 
 

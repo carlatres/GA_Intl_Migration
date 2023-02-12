@@ -24,9 +24,17 @@ def generate_tessellation(df):
     # print(tessellation.head())
     """ As the tessellation provided by geopandas and the existing one are different, 
     we will make a comparison between the countries listed on each table """
-    world_tess = capital_df.merge(tess.drop_duplicates(), on=['tile_ID'], how='left', indicator=True)
-    world_tess = world_tess.dropna()
+    # world_tess = capital_df.merge(tess.drop_duplicates(), on=['tile_ID'], how='left', indicator=True)
+    # world_tess = world_tess.dropna()
     return tess
+
+
+def remove_multipolygons(df):
+    tess_orig = generate_tessellation(df)
+    tess_expl = tess_orig.explode(index_parts=True)
+    tess_expl.reset_index(inplace=True)
+    tess_expl = tess_expl[tess_expl['level_1'] == 0]
+    return tess_expl
 
 
 def generate_flow_map(fdf):
@@ -35,11 +43,13 @@ def generate_flow_map(fdf):
     x.save(outfile='oggi.html')
     plt.show()
 
-
+"""
 tessellation = generate_tessellation(capital_df)
+tessellation_exploded = remove_multipolygons(capital_df)
 fdf = skmob.FlowDataFrame.from_file('./data/countries_flows.csv', origin='origin',
                                     destination='destination', tessellation=tessellation, tile_id='tile_ID')
 # generate_flow_map(fdf)
 
 
 print(fdf.head())
+"""
