@@ -1,14 +1,20 @@
 import skmob
 import geopandas as gpd
+import pandas as pd
 from shapely.geometry import Polygon
-
 import utilities as utils
 # import folium
 # from folium.plugins import HeatMap
 # import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from main import capital_df
+
+def add_gdp(tessdf):
+    gdp_df = pd.read_csv('./data/out_put.csv', index_col=[0])
+    gdp_df.drop(['country', 'Country or Area'], axis=1, inplace=True)
+    tessdf = tessdf.merge(gdp_df, on=['tile_ID'], how='left')
+    tessdf.rename(columns={'usd_value': 'gdp'}, inplace=True)
+    return tessdf
 
 
 def generate_tessellation(df):
@@ -21,11 +27,7 @@ def generate_tessellation(df):
     tess = tess
     tess.loc[tess['name'] == 'France', 'tile_ID'] = 'FRA'
     tess.loc[tess['name'] == 'Norway', 'tile_ID'] = 'NOR'
-    # print(tessellation.head())
-    """ As the tessellation provided by geopandas and the existing one are different, 
-    we will make a comparison between the countries listed on each table """
-    # world_tess = capital_df.merge(tess.drop_duplicates(), on=['tile_ID'], how='left', indicator=True)
-    # world_tess = world_tess.dropna()
+    tess.rename(columns={'gdp_md_est': 'gdp'}, inplace=True)
     return tess
 
 
@@ -44,12 +46,5 @@ def generate_flow_map(fdf):
     plt.show()
 
 """
-tessellation = generate_tessellation(capital_df)
-tessellation_exploded = remove_multipolygons(capital_df)
-fdf = skmob.FlowDataFrame.from_file('./data/countries_flows.csv', origin='origin',
-                                    destination='destination', tessellation=tessellation, tile_id='tile_ID')
-# generate_flow_map(fdf)
 
-
-print(fdf.head())
 """
