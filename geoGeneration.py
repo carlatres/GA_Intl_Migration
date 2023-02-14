@@ -5,10 +5,8 @@ from countryinfo import CountryInfo
 
 
 def generate_latlon(df):
-
     longitude = []
     latitude = []
-
     for index, row in df.iterrows():
         try:
             x = CountryInfo(row['country'])
@@ -19,10 +17,6 @@ def generate_latlon(df):
             logging.info(e)
             latitude.append(np.nan)
             longitude.append(np.nan)
-
     df["lng"] = longitude
     df["lat"] = latitude
-
-    # df_na = df[df['capital'] == 'NA']
-
     return df

@@ -1,24 +1,27 @@
 import pandas as pd
-import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt
 
 from data import generate_df, generate_capitals
+from flow_distance_distributions import get_top_flow_distances, add_flow_distances, read_abel_s1
+from flow_distributions import read_all_years_flows, get_orig_flows, get_dest_flows, extract_by_orig_label, \
+    extract_by_dest_label
 from geoGeneration import generate_latlon
 from tess import generate_tessellation, remove_multipolygons
 import utilities
 
 import skmob
-from skmob.utils import utils, constants
-from skmob.tessellation import tilers
-from skmob.utils.plot import plot_gdf
+from skmob.utils import constants
 from sklearn.model_selection import train_test_split
 from skmob.measures.evaluation import r_squared, mse, spearman_correlation, \
     pearson_correlation, common_part_of_commuters, common_part_of_commuters_distance
 from skmob.models.gravity import Gravity
+from skmob.models.radiation import Radiation
 
 
-""" Dataset exploration """
+""" -------------------------------------------------------------------- """
+""" ________________________ Dataset exploration _______________________ """
+
 # read countries data and generate dataframe
 c_df = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2005-10', index_col=0)
 c_df = c_df.iloc[:-1, :-1]
@@ -31,13 +34,6 @@ countries_df = utilities.remove_orig_dest_countries_tess(countries_df)
 #   to retrieve it in the FlowDataFrame generation
 countries_df.to_csv('./data/countries_flows.csv', index=False)
 
-"""
-# read world regions data and generate dataframe
-r_df = pd.read_excel("./data/abel-database-s1.xlsx", sheet_name='flow estimates by region 2005', index_col=0)
-regions_df = generate_df(r_df)
-regions_df.to_csv('./data/regions_flows.csv', index=False)
-"""
-
 # read country and world region look up data
 capital_df = pd.read_excel("./data/abel-database-s1.xlsx", sheet_name='look up')
 generate_capitals(capital_df)
@@ -48,10 +44,12 @@ capital_df = capital_df.dropna()
 capital_df = utilities.remove_oomc(capital_df, 'iso 3 code')
 
 capital_df.rename(columns={'iso 3 code': 'tile_ID'}, inplace=True)
-# capital_df.to_csv('./data/countries.csv', index=False)
 
-""" Creating FlowDataFrames and usage of plot_flows """
-tessellation = generate_tessellation(capital_df)
+""" -------------------------------------------------------------------- """
+""" __________________ FlowDataFrames Plot_Flows _______________________ """
+""" NOTE.- The plot flow could not be viewed as a plt.show, the file had to be saved as plot_flows_countries.html """
+
+tessellation = generate_tessellation()
 fdf = skmob.FlowDataFrame.from_file('./data/countries_flows.csv', origin='origin',
                                     destination='destination', tessellation=tessellation, tile_id='tile_ID')
 map_f = fdf.plot_tessellation()
@@ -59,12 +57,117 @@ x = fdf.plot_flows(map_f=map_f, min_flow=1000, flow_weight=0.5)  # flow_exp=0.5)
 x.save(outfile='plot_flows_countries.html')
 plt.show()
 
-print(fdf.head())
+""" -------------------------------------------------------------------- """
+""" ________ Distribution of Migration Flows and Flow Distances ________ """
 
-""" Distribution of Migration Flows and Flow Distances """
+# MIGRATION FLOW DISTRIBUTIONS
+
+# base data for flow distance distributions
+df_90, df_95, df_00, df_05 = read_all_years_flows()
+
+# top destination for all migrants flows
+df_top10_total = get_orig_flows(df_90, df_95, df_00, df_05, 'TOTAL')
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Immigration Trend Destination for All Migrants Flows')
+plt.ylabel('Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
+
+# top destination for migrants from Italy flows
+df_top10_total = get_orig_flows(df_90, df_95, df_00, df_05, 'ITA')
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Immigration Trend Destination for Migrants from Italy Flows')
+plt.ylabel('Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
+
+# top origin of all migrants flows
+df_top10_total = get_dest_flows(df_90, df_95, df_00, df_05, 'TOTAL')
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Top Origin of All Migrants Flows')
+plt.ylabel('Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
+
+# top origin of migrants to Italy flows
+df_top10_total = get_dest_flows(df_90, df_95, df_00, df_05, 'ITA')
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Top Origin of Migrants to Italy Flows')
+plt.ylabel('Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
+
+# FLOW DISTANCE DISTRIBUTIONS
+
+# base data for flow distance distributions
+lat_lng_df = read_abel_s1()
+years = ['1995', '2000', '2005', '2010']
+df_90, df_95, df_00, df_05 = read_all_years_flows()
+
+# flow distance distribution for migrants from Italy
+flow_df = extract_by_orig_label(df_90, df_95, df_00, df_05, 'ITA')
+flow_df = add_flow_distances(flow_df, lat_lng_df, 'ITA')
+
+df_top10_total = get_top_flow_distances(flow_df)
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Destination for Top Flow Distance Migrants from Italy Flows')
+plt.ylabel('Distance Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
+
+# flow distance distribution for migrants from USA
+flow_df = extract_by_orig_label(df_90, df_95, df_00, df_05, 'USA')
+flow_df = add_flow_distances(flow_df, lat_lng_df, 'USA')
+
+df_top10_total = get_top_flow_distances(flow_df)
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Destination for Top Flow Distance Migrants from USA Flows')
+plt.ylabel('Distance Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
+
+# flow distance distribution for migrants to Italy
+flow_df = extract_by_dest_label(df_90, df_95, df_00, df_05, 'ITA')
+flow_df = add_flow_distances(flow_df, lat_lng_df, 'ITA')
+
+df_top10_total = get_top_flow_distances(flow_df)
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Origin of Top Flow Distance Migrants to Italy Flows')
+plt.ylabel('Distance Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
+
+# flow distance distribution for migrants to USA
+flow_df = extract_by_dest_label(df_90, df_95, df_00, df_05, 'USA')
+flow_df = add_flow_distances(flow_df, lat_lng_df, 'USA')
+
+df_top10_total = get_top_flow_distances(flow_df)
+df_top10_total.plot(kind='area',
+                    stacked=False,
+                    figsize=(20, 10))
+plt.title('Origin of Top Flow Distance Migrants to USA Flows')
+plt.ylabel('Distance Flow of Immigrants')
+plt.xlabel('Years')
+plt.show()
 
 
-""" Gravity Model """
+""" -------------------------------------------------------------------- """
+""" ___________________________ Gravity Model __________________________ """
+
 c_df = pd.read_excel("./data/abel-database-s2.xlsx", sheet_name='2005-10', index_col=0)
 c_df = c_df.iloc[:-1, :-1]
 flow_by_country_df = generate_df(c_df)
@@ -77,17 +180,20 @@ df_w_lonlat.rename(columns={'iso 3 code': 'tile_ID'}, inplace=True)
 tdf = skmob.TrajDataFrame(df_w_lonlat, latitude='latitude', longitude='longitude')
 tdf.crs = 'epsg:4326'
 
-tessellation = generate_tessellation(df_w_lonlat)
-tessellation_exploded = remove_multipolygons(df_w_lonlat)
-# tessellation_exploded.set_index('tile_ID', drop=False, inplace=True)
-# tess_df = pd.DataFrame(tessellation_exploded)
+tessellation = generate_tessellation()
+# tdf mapping does not accept multipolygons, it was needed to transform the multipolygon into polygons.
+#  The polygon after this point correspond to the continental part or larger island of the country/region
+tessellation_exploded = remove_multipolygons()
 
-# assign each point to the corresponding tile
+# mapping recognizes tile_ID_left and tile_ID_right.
+#   Constant value is changed in order to avoid this error with the method
 constants.TILE_ID = 'tile_ID_left'
+# assign each point to the corresponding tile
 mtdf = tdf.mapping(tessellation_exploded, remove_na=True)
-# mtdf = tdf.mapping(tessellation[1:3])
 mtdf.head(10)
+# constans tile ID is returned to the original value
 constants.TILE_ID = 'tile_ID'
+
 # compute relevance
 relevances = df_w_lonlat.groupby(by='tile_ID').count()[['lat']].rename(columns={'lat': 'relevance'})
 relevances /= relevances.sum()  # normalize
@@ -97,7 +203,6 @@ tessellation_exploded = tessellation_exploded.merge(relevances, right_index=True
 tessellation_exploded.head(3)
 
 tessellation = utilities.remove_countries(tessellation, 'tile_ID')
-
 w_tess = tessellation_exploded.merge(df_w_lonlat.drop_duplicates(), on=['tile_ID'], how='left', indicator=True)
 
 # redo FlowDataDrame after changes in tessellation
@@ -110,7 +215,6 @@ fdf_train, fdf_test = train_test_split(fdf, test_size=0.3, random_state=25)
 # compute number of trips for each tile
 tot_outflows = fdf_train[fdf_train['origin'] != fdf_train['destination']] \
     .groupby(by='origin', axis=0)[['flow']].sum().fillna(0).rename(columns={'flow': 'tot_outflow'})
-# tot_outflows = tot_outflows[tot_outflows['tot_outflow'] != 0]
 
 if 'tot_outflow' not in tessellation_exploded.columns:
     tessellation_exploded = tessellation_exploded.merge(tot_outflows, right_index=True, left_on='tile_ID',
@@ -124,7 +228,6 @@ fdf_train = fdf_train.loc[fdf_train.origin != 'TTO']
 fdf_train = fdf_train.loc[fdf_train.origin != 'SSD']
 fdf_train = fdf_train.loc[fdf_train.destination != 'TTO']
 fdf_train = fdf_train.loc[fdf_train.destination != 'SSD']
-# train_against = fdf_train.sort_values(by='flow', ascending=False).drop_duplicates(subset=['origin'])
 train_against = fdf_train.loc[fdf_train['flow'] > 10]
 
 """ ------------------- Gravity Model G1 with Population ------------------- """
@@ -141,11 +244,6 @@ sc_fdf_fitted_G1 = gravity_singly_fitted_G1.generate(tessellation_exploded,
                                                      relevance_column='pop_est', out_format='flows')
 sc_fdf_fitted_G1.head(3)
 
-"""
-my_plot = sc_fdf_fitted.plot_flows(min_flow=20000, tiles='cartodbpositron', flow_weight=2, opacity=0.25)
-my_plot.save(outfile='fitted.html')
-plt.show()
-"""
 # Qualitative evaluation
 
 # Create a baseline model (without dependence on relevance and distance)
@@ -171,7 +269,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G1 with Population - Baseline')
 plt.loglog()
-plt.savefig('./plots/plot_g1_pop.png')
+plt.savefig('plot_g1_pop.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -229,7 +327,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G2 with Population - Baseline')
 plt.loglog()
-plt.savefig('./plots/plot_g2_pop.png')
+plt.savefig('plot_g2_pop.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -284,7 +382,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G3 with Population - Baseline')
 plt.loglog()
-plt.savefig('./plots/plot_g3_pop.png')
+plt.savefig('plot_g3_pop.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -341,7 +439,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G4 with Population - Baseline')
 plt.loglog()
-plt.savefig('./plots/plot_g4_pop.png')
+plt.savefig('plot_g4_pop.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -356,6 +454,14 @@ for i, metric in enumerate(metrics):
     m = metric(xy_g4[:, 0], xy_g4[:, 1])
     b = metric(xy_baseline_g4[:, 0], xy_baseline_g4[:, 1])
     print("%s:   %s - %s" % (names[i], np.round(m, 3), np.round(b, 3)))
+
+""" -------------------- Radiation Model with Population --------------------"""
+np.random.seed(0)
+radiation = Radiation()
+rad_flows = radiation.generate(tessellation_exploded, tile_id_column='tile_ID',
+                               tot_outflows_column='tot_outflow', relevance_column='pop_est',
+                               out_format='flows_sample')
+print(rad_flows.head())
 
 """ ------------------- Gravity Model G1 with GDP ------------------- """
 gravity_singly_fitted_gdp_G1 = Gravity(gravity_type='singly constrained', name='model G1')
@@ -397,7 +503,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G1 with GDP - Baseline')
 plt.loglog()
-plt.savefig('./plots/plot_g1_gdp.png')
+plt.savefig('plot_g1_gdp.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -455,7 +561,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G2 with GDP')
 plt.loglog()
-plt.savefig('./plots/plot_g2_gdp.png')
+plt.savefig('plot_g2_gdp.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -510,7 +616,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G3 with GDP - Baseline')
 plt.loglog()
-plt.savefig('./plots/plot_g3_gdp.png')
+plt.savefig('plot_g3_gdp.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -568,7 +674,7 @@ plt.ylabel('Model flow')
 plt.legend(loc='upper left')
 plt.title('Gravity Model G4 with GDP - Baseline')
 plt.loglog()
-plt.savefig('./plots/plot_g4_gpd.png')
+plt.savefig('plot_g4_gpd.png')
 plt.show()
 
 # Quantitative evaluation metrics
@@ -584,5 +690,10 @@ for i, metric in enumerate(metrics):
     b = metric(xy_baseline_gdp_g4[:, 0], xy_baseline_gdp_g4[:, 1])
     print("%s:   %s - %s" % (names[i], np.round(m, 3), np.round(b, 3)))
 
-print("llegue aqui")
-""""""
+""" -------------------- Radiation Model with Population --------------------"""
+np.random.seed(0)
+radiation = Radiation()
+rad_flows = radiation.generate(tessellation_exploded, tile_id_column='tile_ID',
+                               tot_outflows_column='tot_outflow', relevance_column='gdp',
+                               out_format='flows_sample')
+print(rad_flows.head())

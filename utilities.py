@@ -44,24 +44,4 @@ def remove_orig_dest_countries_tess(df):
     return df
 
 
-# calculate Haversine distance
-def haversine(lat1, lon1, lat2, lon2):
-    r = 6371  # radius of Earth in kilometers
-    phi1 = radians(lat1)
-    phi2 = radians(lat2)
-    delta_phi = radians(lat2 - lat1)
-    delta_lambda = radians(lon2 - lon1)
-
-    a = sin(delta_phi / 2)**2 + cos(phi1) * cos(phi2) * sin(delta_lambda / 2)**2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-    distance = r * c
-    return distance
-
-
-# calculate the distance between two points using the Haversine distance
-def calculate_distance(flows_df, capital_df):
-
-    print('ciao')
-
 
