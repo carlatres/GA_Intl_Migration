@@ -14,13 +14,13 @@ library(magrittr)
 # PART 2: Data Preparation
 
 # set working directory
-setwd("C:/Users/caltr/OneDrive/Documents/UniPisa/Y2S1/Geospatial_Analytics/Project")
+setwd("C:/Users/caltr/PycharmProjects/GA_Intl_Migration/data")
 
 # excel sheets with data
-readxl::excel_sheets('abel-database-s1-mod.xlsx')
+readxl::excel_sheets('abel-database-s1.xlsx')
 
 # choose sheet name and read in its data
-data <- read_excel(path = 'abel-database-s1-mod.xlsx', sheet = 'flow estimates by region 2005', range = cell_cols("B:Q"))
+data <- read_excel(path = 'abel-database-s1.xlsx', sheet = 'flow estimates by region 2005', range = cell_cols("B:Q"))
 
 data <- data[-1,]
 
@@ -60,7 +60,7 @@ class(rmat) <- "numeric"
 # preliminaries
 
 # SVG graphics device
-svg(file="Circular_mig_flowregions_.svg")
+svg(file="plot_circular_flow_regions.svg")
 
 # in case the code is run a couple of times, the following command disables layout function
 par(mfrow=c(1,1))
@@ -97,10 +97,10 @@ chordDiagram(
   rmat, 
   
   # change order of segments
-  order = c("South America", "Central America", "North America", 
-            "Sub-Saharan Africa", "North Africa", 
+  order = c("North America", "Central America", "South America",
+            "North Africa",  "Sub-Saharan Africa",
             "Northern Europe", "Western Europe", "Southern Europe", "Eastern Europe",
-            "Central Asia", "Western Asia", "East Asia", "South Asia", "South-East Asia", 
+            "Central Asia", "Western Asia", "South Asia", "East Asia", "South-East Asia",
             "Oceania"), 
   
   # segment and link colours
