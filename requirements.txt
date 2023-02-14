@@ -4,3 +4,4 @@ numpy==1.24.1
 matplotlib==3.6.2
 scikit-learn==1.2.0
 geopandas==0.10.2
+Shapely==1.8.5.post1
